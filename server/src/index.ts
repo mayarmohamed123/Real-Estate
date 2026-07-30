@@ -4,6 +4,9 @@ import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import { authMiddleware } from "./Middleware/authMiddleware.js";
+import tenantRoutes from "./routes/tenantRoutes.js";
+import managerRoutes from "./routes/managerRoutes.js";
 
 //configurations
 dotenv.config();
@@ -29,6 +32,9 @@ app.get("/", (req, res) => {
     "Hello World! This is the backend API for the Real Estate Platform.",
   );
 });
+
+app.use("/tenants", authMiddleware(["tenant"]), tenantRoutes);
+app.use("/managers", authMiddleware(["manager"]), managerRoutes);
 
 //server
 const PORT = process.env.PORT || 3000;

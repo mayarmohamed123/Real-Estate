@@ -196,3 +196,54 @@
     @apply font-sans;
   }
 }
+
+/* Amplify UI Theme Customization */
+[data-amplify-authenticator] {
+  --amplify-colors-brand-primary-80: #5c5046;
+  --amplify-colors-brand-primary-90: #4a4037;
+  --amplify-colors-brand-primary-100: #3d342d;
+  --amplify-components-button-primary-background-color: #5c5046;
+  --amplify-components-button-primary-hover-background-color: #4a4037;
+  --amplify-components-button-primary-border-radius: 9999px;
+  --amplify-components-fieldcontrol-border-radius: 12px;
+  --amplify-components-authenticator-router-border-width: 0;
+  --amplify-components-authenticator-router-box-shadow: none;
+  --amplify-components-tabs-item-active-color: #5c5046;
+  --amplify-components-tabs-item-active-border-color: #5c5046;
+  --amplify-components-button-link-color: #5c5046;
+}
+
+[data-amplify-authenticator] .amplify-button--primary {
+  background-color: #5c5046 !important;
+  color: #ffffff !important;
+  border-radius: 9999px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.12em !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  padding: 0.85rem 1.5rem !important;
+}
+
+[data-amplify-authenticator] .amplify-label {
+  font-size: 0.6875rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.15em !important;
+  text-transform: uppercase !important;
+  color: #6d6660 !important;
+  margin-bottom: 0.375rem !important;
+}
+
+[data-amplify-authenticator] .amplify-input {
+  background-color: rgba(249, 247, 242, 0.7) !important;
+  border: 1px solid #e5e2dc !important;
+  border-radius: 12px !important;
+  font-size: 0.875rem !important;
+  padding: 0.75rem 1rem !important;
+}
+
+.amplify-tabs__item {
+  color: #6b5b4d !important;
+  font-family: var(--font-heading) !important;
+  font-weight: 600;
+}
+

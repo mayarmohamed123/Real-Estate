@@ -25,12 +25,16 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center gap-2 sm:hidden">
-            <Button variant="ghost" size="sm" className="px-4 py-2">
-              Sign in
-            </Button>
-            <Button size="sm" className="px-4 py-2">
-              Sign up
-            </Button>
+            <Link href="/signin">
+              <Button variant="ghost" size="sm" className="px-4 py-2">
+                Sign in
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button size="sm" className="px-4 py-2">
+                Sign up
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -47,15 +51,19 @@ export default function Navbar() {
         </ul>
 
         <div className="hidden items-center gap-3 sm:flex">
-          <Button
-            variant="ghost"
-            size="lg"
-            className="px-6 py-4 sm:px-7 sm:py-5">
-            Sign in
-          </Button>
-          <Button size="lg" className="px-6 py-4 sm:px-7 sm:py-5">
-            Sign up
-          </Button>
+          <Link href="/signin">
+            <Button
+              variant="ghost"
+              size="lg"
+              className="px-6 py-4 sm:px-7 sm:py-5">
+              Sign in
+            </Button>
+          </Link>
+          <Link href="/signup">
+            <Button size="lg" className="px-6 py-4 sm:px-7 sm:py-5">
+              Sign up
+            </Button>
+          </Link>
         </div>
       </nav>
     </header>

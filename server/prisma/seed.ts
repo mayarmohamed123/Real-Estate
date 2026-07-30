@@ -1,8 +1,20 @@
+import "dotenv/config";
 import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const prisma = new PrismaClient();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -36,7 +48,7 @@ async function resetSequence(modelName: string) {
   const quotedModelName = `"${toPascalCase(modelName)}"`;
 
   const maxIdResult = await (
-    prisma[modelName as keyof PrismaClient] as any
+    prisma[toCamelCase(modelName) as keyof PrismaClient] as any
   ).findMany({
     select: { id: true },
     orderBy: { id: "desc" },
@@ -49,7 +61,7 @@ async function resetSequence(modelName: string) {
   await prisma.$executeRaw(
     Prisma.raw(`
     SELECT setval(pg_get_serial_sequence('${quotedModelName}', 'id'), coalesce(max(id)+1, ${nextId}), false) FROM ${quotedModelName};
-  `)
+  `),
   );
   console.log(`Reset sequence for ${modelName} to ${nextId}`);
 }
@@ -96,7 +108,7 @@ async function main() {
     const filePath = path.join(dataDirectory, fileName);
     const jsonData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
     const modelName = toPascalCase(
-      path.basename(fileName, path.extname(fileName))
+      path.basename(fileName, path.extname(fileName)),
     );
     const modelNameCamel = toCamelCase(modelName);
 
@@ -117,7 +129,7 @@ async function main() {
     }
 
     // Reset the sequence after seeding each model
-    await resetSequence(modelName);
+    await resetSequence(toCamelCase(modelName));
 
     await sleep(1000);
   }
