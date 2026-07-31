@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { User, Manager, Tenant } from "@/types";
 import { fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
+import { createNewUserInDatabase } from "@/lib/utils";
 
 export const api = createApi({
   reducerPath: "api",
@@ -21,21 +22,36 @@ export const api = createApi({
       queryFn: async (_, _queryApi, _extraoptions, fetchWithBQ) => {
         try {
           const session = await fetchAuthSession();
-          console.log(session);
           const { idToken } = session.tokens ?? {};
+
+          if (!idToken) {
+            return { error: "No active session" };
+          }
+
           const user = await getCurrentUser();
-          console.log(user);
-          const userRole = (idToken?.payload["custom:role"] as string) ?? null;
-          console.log(userRole);
+          const userRole = (idToken.payload["custom:role"] as string) ?? null;
 
           const endpoint =
             userRole === "manager"
-              ? `/manager/${user.userId}`
+              ? `/managers/${user.userId}`
               : `/tenants/${user.userId}`;
 
           let userDetailsResponse = await fetchWithBQ(endpoint);
 
           // JIT pattern ( if the user doesn't exist, create one )
+          if (
+            userDetailsResponse.error &&
+            "status" in userDetailsResponse.error &&
+            userDetailsResponse.error.status === 404
+          ) {
+            userDetailsResponse = await createNewUserInDatabase(
+              user,
+              idToken,
+              userRole,
+              fetchWithBQ,
+            );
+          }
+
           return {
             data: {
               cognitoInfo: { ...user },
@@ -43,6 +59,7 @@ export const api = createApi({
               userRole,
             },
           };
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           return {
             error: error.message || "couldn't fetch the user data",

@@ -138,6 +138,18 @@
   --gray-900: #171615;
 
   /* ===========================
+     Sidebar
+  =========================== */
+  --sidebar: #f8f3ee;
+  --sidebar-foreground: #453b34;
+  --sidebar-primary: #887362;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1e7dc;
+  --sidebar-accent-foreground: #453b34;
+  --sidebar-border: #e8d8c7;
+  --sidebar-ring: #c2a88e;
+
+  /* ===========================
      Radius
   =========================== */
   --radius: 12px;

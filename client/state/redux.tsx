@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useState, useEffect } from "react";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { TypedUseSelectorHook, useDispatch, useSelector, Provider } from "react-redux";
 import globalReducer from "./index";
@@ -37,10 +37,12 @@ export default function StoreProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const storeRef = useRef<AppStore | null>(null);
-  if (!storeRef.current) {
-    storeRef.current = makeStore();
-    setupListeners(storeRef.current.dispatch);
-  }
-  return <Provider store={storeRef.current}>{children}</Provider>;
+  const [store] = useState(() => makeStore());
+
+  useEffect(() => {
+    const unsubscribe = setupListeners(store.dispatch);
+    return unsubscribe;
+  }, [store]);
+
+  return <Provider store={store}>{children}</Provider>;
 }
