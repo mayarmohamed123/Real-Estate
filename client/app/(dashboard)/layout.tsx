@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useGetAuthUserQuery } from "@/state/api";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -12,11 +13,28 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const router = useRouter();
   const { data: authUser, isLoading } = useGetAuthUserQuery();
   const isSidebarCollapsed = useAppSelector(
     (state) => state.global.isSidebarCollapsed
   );
-  const userRole = authUser?.userRole?.toLowerCase() || "tenant";
+  const userRole = authUser?.userRole?.toLowerCase();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (!userRole) {
+      router.push("/signin");
+      return;
+    }
+
+    if (pathname.startsWith("/managers") && userRole !== "manager") {
+      router.push("/tenants/dashboard");
+    } else if (pathname.startsWith("/tenants") && userRole !== "tenant") {
+      router.push("/managers/dashboard");
+    }
+  }, [pathname, userRole, isLoading, router]);
 
   if (isLoading) {
     return (
@@ -30,6 +48,11 @@ export default function DashboardLayout({
       </div>
     );
   }
+
+  // Prevent flash of unauthorized content during redirect
+  if (!userRole) return null;
+  if (pathname.startsWith("/managers") && userRole !== "manager") return null;
+  if (pathname.startsWith("/tenants") && userRole !== "tenant") return null;
 
   return (
     <SidebarProvider defaultOpen={!isSidebarCollapsed}>

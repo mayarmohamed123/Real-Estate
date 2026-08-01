@@ -7,6 +7,7 @@ import morgan from "morgan";
 import { authMiddleware } from "./Middleware/authMiddleware.js";
 import tenantRoutes from "./routes/tenantRoutes.js";
 import managerRoutes from "./routes/managerRoutes.js";
+import propertyRoutes from "./routes/propertyRoutes.js";
 
 //configurations
 dotenv.config();
@@ -35,6 +36,7 @@ app.get("/", (req, res) => {
 
 app.use("/tenants", authMiddleware(["tenant"]), tenantRoutes);
 app.use("/managers", authMiddleware(["manager"]), managerRoutes);
+app.use("/properties", propertyRoutes);
 
 //server
 const PORT = process.env.PORT || 3000;
