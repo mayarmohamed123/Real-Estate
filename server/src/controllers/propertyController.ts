@@ -351,3 +351,107 @@ export const createProperty = async (
     });
   }
 };
+
+export const updateProperty = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+
+    if (isNaN(id)) {
+      res.status(400).json({ message: "Property ID must be a valid number" });
+      return;
+    }
+
+    const {
+      name,
+      description,
+      pricePerMonth,
+      securityDeposit,
+      applicationFee,
+      isPetsAllowed,
+      isParkingIncluded,
+      beds,
+      baths,
+      squareFeet,
+      propertyType,
+      amenities,
+      highlights,
+    } = req.body;
+
+    const updated = await prisma.property.update({
+      where: { id },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(pricePerMonth !== undefined && {
+          pricePerMonth: Number(pricePerMonth),
+        }),
+        ...(securityDeposit !== undefined && {
+          securityDeposit: Number(securityDeposit),
+        }),
+        ...(applicationFee !== undefined && {
+          applicationFee: Number(applicationFee),
+        }),
+        ...(isPetsAllowed !== undefined && {
+          isPetsAllowed: isPetsAllowed === "true" || isPetsAllowed === true,
+        }),
+        ...(isParkingIncluded !== undefined && {
+          isParkingIncluded:
+            isParkingIncluded === "true" || isParkingIncluded === true,
+        }),
+        ...(beds !== undefined && { beds: Number(beds) }),
+        ...(baths !== undefined && { baths: Number(baths) }),
+        ...(squareFeet !== undefined && { squareFeet: Number(squareFeet) }),
+        ...(propertyType !== undefined && { propertyType }),
+        ...(amenities !== undefined && {
+          amenities:
+            typeof amenities === "string" ? JSON.parse(amenities) : amenities,
+        }),
+        ...(highlights !== undefined && {
+          highlights:
+            typeof highlights === "string" ? JSON.parse(highlights) : highlights,
+        }),
+      },
+      include: { location: true },
+    });
+
+    res.json(updated);
+  } catch (error: any) {
+    if (error?.code === "P2025") {
+      res.status(404).json({ message: "Property not found" });
+      return;
+    }
+    res.status(500).json({
+      message: `Error updating property: ${error.message}`,
+    });
+  }
+};
+
+export const deleteProperty = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+
+    if (isNaN(id)) {
+      res.status(400).json({ message: "Property ID must be a valid number" });
+      return;
+    }
+
+    await prisma.property.delete({ where: { id } });
+
+    res.json({ message: "Property deleted successfully" });
+  } catch (error: any) {
+    if (error?.code === "P2025") {
+      res.status(404).json({ message: "Property not found" });
+      return;
+    }
+    res.status(500).json({
+      message: `Error deleting property: ${error.message}`,
+    });
+  }
+};
+
