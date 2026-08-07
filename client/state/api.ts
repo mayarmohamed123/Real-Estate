@@ -1,23 +1,29 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { User, Manager, Tenant } from "@/types";
+import { User, Manager, Tenant, Property } from "@/types";
 import { fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
 import { createNewUserInDatabase } from "@/lib/utils";
+import { FiltersState } from "./index";
 
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000",
     prepareHeaders: async (headers) => {
-      const session = await fetchAuthSession();
-      const { idToken } = session.tokens ?? {};
-      if (idToken) {
-        headers.set("Authorization", `Bearer ${idToken}`);
+      try {
+        const session = await fetchAuthSession();
+        const { idToken } = session.tokens ?? {};
+        if (idToken) {
+          headers.set("Authorization", `Bearer ${idToken}`);
+        }
+      } catch {
+        // unauthenticated — skip auth header
       }
       return headers;
     },
   }),
-  tagTypes: ["Tenant", "Manager"],
+  tagTypes: ["Tenant", "Manager", "Properties"],
   endpoints: (build) => ({
+    // ── Auth ──────────────────────────────────────────────────────────────────
     getAuthUser: build.query<User, void>({
       queryFn: async (_, _queryApi, _extraoptions, fetchWithBQ) => {
         try {
@@ -68,6 +74,39 @@ export const api = createApi({
       },
       providesTags: ["Tenant", "Manager"],
     }),
+
+    // ── Properties ────────────────────────────────────────────────────────────
+    getProperties: build.query<Property[], Partial<FiltersState>>({
+      query: (filters) => {
+        const params: Record<string, string | number | undefined> = {};
+
+        if (filters.location) params.location = filters.location;
+        if (filters.beds && filters.beds !== "any") params.beds = filters.beds;
+        if (filters.baths && filters.baths !== "any") params.baths = filters.baths;
+        if (filters.propertyType && filters.propertyType !== "any")
+          params.propertyType = filters.propertyType;
+        if (filters.amenities && filters.amenities.length > 0)
+          params.amenities = filters.amenities.join(",");
+        if (filters.availableFrom) params.availableFrom = filters.availableFrom;
+        if (filters.priceRange) {
+          params.priceMin = filters.priceRange[0];
+          params.priceMax = filters.priceRange[1];
+        }
+        if (filters.squareFeet) {
+          params.squareFeetMin = filters.squareFeet[0];
+          params.squareFeetMax = filters.squareFeet[1];
+        }
+        if (filters.coordinates) {
+          params.latitude = filters.coordinates.lat;
+          params.longitude = filters.coordinates.lng;
+        }
+
+        return { url: "/properties", params };
+      },
+      providesTags: ["Properties"],
+    }),
+
+    // ── Tenants ───────────────────────────────────────────────────────────────
     updateTenantSetting: build.mutation<Tenant, Partial<Tenant>>({
       query: ({ cognitoId, ...body }) => ({
         url: `/tenants/${cognitoId}`,
@@ -79,6 +118,8 @@ export const api = createApi({
         { type: "Manager", id: "LIST" },
       ],
     }),
+
+    // ── Managers ──────────────────────────────────────────────────────────────
     updateManagerSetting: build.mutation<Manager, Partial<Manager>>({
       query: ({ cognitoId, ...body }) => ({
         url: `/managers/${cognitoId}`,
@@ -95,6 +136,7 @@ export const api = createApi({
 
 export const {
   useGetAuthUserQuery,
+  useGetPropertiesQuery,
   useUpdateTenantSettingMutation,
   useUpdateManagerSettingMutation,
 } = api;

@@ -45,6 +45,9 @@ export interface Location {
   state: string;
   country: string;
   postalCode: string;
+  coordinates?:
+    | { latitude: number; longitude: number }
+    | { type: string; coordinates: [number, number] };
 }
 
 export interface Application {
