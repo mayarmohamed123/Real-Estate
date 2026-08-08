@@ -21,7 +21,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Tenant", "Manager", "Properties", "Leases"],
+  tagTypes: ["Tenant", "Manager", "Properties", "Leases", "Applications"],
   endpoints: (build) => ({
     // ── Auth ──────────────────────────────────────────────────────────────────
     getAuthUser: build.query<User, void>({
@@ -198,6 +198,18 @@ export const api = createApi({
       query: (leaseId) => ({ url: `/leases/${leaseId}/payments` }),
       providesTags: ["Leases"],
     }),
+
+    // ── Applications ────────────────────────────────────────────────────────────
+    getApplications: build.query<
+      Application[],
+      { userId: string; userType: "tenant" | "manager" }
+    >({
+      query: ({ userId, userType }) => ({
+        url: "/applications",
+        params: { userId, userType },
+      }),
+      providesTags: ["Applications"],
+    }),
   }),
 });
 
@@ -212,4 +224,5 @@ export const {
   useCreateApplicationMutation,
   useGetLeasesQuery,
   useGetLeasePaymentsQuery,
+  useGetApplicationsQuery,
 } = api;
