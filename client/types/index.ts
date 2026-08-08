@@ -76,6 +76,7 @@ export interface Lease {
   tenantCognitoId: string;
   property?: Property;
   tenant?: Tenant;
+  payments?: Payment[];
 }
 
 export interface Payment {

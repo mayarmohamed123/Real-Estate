@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { User, Manager, Tenant, Property, Application } from "@/types";
+import { User, Manager, Tenant, Property, Application, Lease, Payment } from "@/types";
 import { fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
 import { createNewUserInDatabase } from "@/lib/utils";
 import { FiltersState } from "./index";
@@ -21,7 +21,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Tenant", "Manager", "Properties"],
+  tagTypes: ["Tenant", "Manager", "Properties", "Leases"],
   endpoints: (build) => ({
     // ── Auth ──────────────────────────────────────────────────────────────────
     getAuthUser: build.query<User, void>({
@@ -76,7 +76,10 @@ export const api = createApi({
     }),
 
     // ── Properties ────────────────────────────────────────────────────────────
-    getProperties: build.query<Property[], Partial<FiltersState>>({
+    getProperties: build.query<
+      Property[],
+      Partial<FiltersState> & { favoriteIds?: string }
+    >({
       query: (filters) => {
         const params: Record<string, string | number | undefined> = {};
 
@@ -99,6 +102,9 @@ export const api = createApi({
         if (filters.coordinates) {
           params.latitude = filters.coordinates.lat;
           params.longitude = filters.coordinates.lng;
+        }
+        if (filters.favoriteIds) {
+          params.favoriteIds = filters.favoriteIds;
         }
 
         return { url: "/properties", params };
@@ -178,6 +184,20 @@ export const api = createApi({
       }),
       invalidatesTags: ["Tenant", "Properties"],
     }),
+
+    // ── Leases ────────────────────────────────────────────────────────────────
+    getLeases: build.query<Lease[], { tenantCognitoId?: string }>({
+      query: ({ tenantCognitoId }) => ({
+        url: "/leases",
+        params: tenantCognitoId ? { tenantCognitoId } : undefined,
+      }),
+      providesTags: ["Leases"],
+    }),
+
+    getLeasePayments: build.query<Payment[], number>({
+      query: (leaseId) => ({ url: `/leases/${leaseId}/payments` }),
+      providesTags: ["Leases"],
+    }),
   }),
 });
 
@@ -190,4 +210,6 @@ export const {
   useAddFavoriteMutation,
   useRemoveFavoriteMutation,
   useCreateApplicationMutation,
+  useGetLeasesQuery,
+  useGetLeasePaymentsQuery,
 } = api;

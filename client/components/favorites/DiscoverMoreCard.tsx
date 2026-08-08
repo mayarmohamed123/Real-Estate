@@ -6,7 +6,7 @@ import { Plus, ArrowRight } from "lucide-react";
 
 export default function DiscoverMoreCard() {
   return (
-    <div className="flex flex-col items-center justify-center p-8 text-center rounded-2xl border-2 border-dashed border-border bg-card/40 hover:bg-card hover:border-primary-300 transition-all duration-300 min-h-[340px]">
+    <div className="flex flex-col items-center justify-center p-8 text-center rounded-2xl border-2 border-dashed border-border bg-card/40 hover:bg-card hover:border-primary-300 transition-all duration-300 min-h-85">
       <div className="w-12 h-12 rounded-full bg-primary-50 flex items-center justify-center mb-4">
         <Plus className="size-6 text-primary-600" />
       </div>

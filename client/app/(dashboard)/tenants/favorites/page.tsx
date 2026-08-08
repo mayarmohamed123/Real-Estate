@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useGetAuthUserQuery } from "@/state/api";
+import { useGetAuthUserQuery, useGetPropertiesQuery } from "@/state/api";
 import { Tenant } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import FavoritesHeader from "@/components/favorites/FavoritesHeader";
@@ -25,9 +25,23 @@ function FavoriteCardSkeleton() {
 }
 
 export default function TenantFavoritesPage() {
-  const { data: authUser, isLoading } = useGetAuthUserQuery();
+  const { data: authUser, isLoading: isAuthLoading } = useGetAuthUserQuery();
   const tenant = authUser?.userInfo as Tenant | undefined;
-  const favorites = tenant?.favorites ?? [];
+
+  const favoriteIds = tenant?.favorites?.map((fav) => fav.id) ?? [];
+  const favoriteIdsString = favoriteIds.join(",");
+
+  const { data: favoriteProperties, isLoading: isPropertiesLoading } =
+    useGetPropertiesQuery(
+      { favoriteIds: favoriteIdsString },
+      {
+        skip: !favoriteIdsString || favoriteIds.length === 0,
+      }
+    );
+
+  const isLoading =
+    isAuthLoading || (favoriteIds.length > 0 && isPropertiesLoading);
+  const favorites = favoriteProperties ?? tenant?.favorites ?? [];
 
   return (
     <div className="space-y-8">

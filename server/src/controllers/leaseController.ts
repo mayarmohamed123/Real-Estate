@@ -6,10 +6,18 @@ export const getLeases = async (
   res: Response
 ): Promise<void> => {
   try {
+    const { tenantCognitoId } = req.query;
+
+    const where = tenantCognitoId
+      ? { tenantCognitoId: String(tenantCognitoId) }
+      : {};
+
     const leases = await prisma.lease.findMany({
+      where,
       include: {
         tenant: true,
-        property: true,
+        property: { include: { location: true } },
+        payments: { orderBy: { dueDate: "desc" } },
       },
       orderBy: { startDate: "desc" },
     });
