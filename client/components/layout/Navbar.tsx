@@ -60,7 +60,7 @@ export default function Navbar() {
         link: "/tenants/applications",
         icon: FileText,
       },
-      { name: "My Leases", link: "/tenants/leases", icon: Building2 },
+      { name: "My Residence", link: "/tenants/residence", icon: Building2 },
     ];
   };
 
