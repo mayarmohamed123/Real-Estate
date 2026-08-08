@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { User, Manager, Tenant, Property } from "@/types";
+import { User, Manager, Tenant, Property, Application } from "@/types";
 import { fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
 import { createNewUserInDatabase } from "@/lib/utils";
 import { FiltersState } from "./index";
@@ -158,6 +158,26 @@ export const api = createApi({
         invalidatesTags: ["Tenant", "Properties"],
       }
     ),
+
+    // ── Applications ──────────────────────────────────────────────────────────
+    createApplication: build.mutation<
+      Application,
+      {
+        propertyId: number;
+        tenantCognitoId: string;
+        name: string;
+        email: string;
+        phoneNumber: string;
+        message?: string;
+      }
+    >({
+      query: (body) => ({
+        url: "/applications",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Tenant", "Properties"],
+    }),
   }),
 });
 
@@ -169,4 +189,5 @@ export const {
   useUpdateManagerSettingMutation,
   useAddFavoriteMutation,
   useRemoveFavoriteMutation,
+  useCreateApplicationMutation,
 } = api;

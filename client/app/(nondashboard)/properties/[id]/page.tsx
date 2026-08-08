@@ -7,11 +7,11 @@ import { useParams } from "next/navigation";
 import { useGetPropertyQuery } from "@/state/api";
 import type { Property } from "@/types";
 import PropertyHero from "@/components/property/PropertyHero";
+import PropertyDetailsSkeleton from "@/components/property/PropertyDetailsSkeleton";
 import PropertyOverview from "@/components/property/PropertyOverview";
 import PropertyDetailsTabs from "@/components/property/PropertyDetailsTabs";
 import PropertySpecs from "@/components/property/PropertySpecs";
 import PropertySidebar from "@/components/property/PropertySidebar";
-import PropertyDetailsSkeleton from "@/components/property/PropertyDetailsSkeleton";
 
 const PropertyLocationMap = dynamic<{ property: Property }>(
   () =>
