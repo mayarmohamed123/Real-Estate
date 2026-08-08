@@ -36,6 +36,7 @@ export interface Tenant {
   name: string;
   email: string;
   phoneNumber: string;
+  favorites?: Property[];
 }
 
 export interface Location {

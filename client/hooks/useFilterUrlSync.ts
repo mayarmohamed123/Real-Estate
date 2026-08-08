@@ -99,18 +99,19 @@ export function useFilterUrlSync() {
       const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
       router.replace(newUrl, { scroll: false });
     }, 400)
-  ).current;
+  );
 
   // Cleanup debounced function on unmount
   useEffect(() => {
+    const debounced = debouncedUpdateUrl.current;
     return () => {
-      debouncedUpdateUrl.cancel();
+      debounced.cancel();
     };
-  }, [debouncedUpdateUrl]);
+  }, []);
 
   // Trigger debounced update whenever Redux filters change
   useEffect(() => {
     if (!isInitialized.current) return;
-    debouncedUpdateUrl(filters);
-  }, [filters, debouncedUpdateUrl]);
+    debouncedUpdateUrl.current(filters);
+  }, [filters]);
 }

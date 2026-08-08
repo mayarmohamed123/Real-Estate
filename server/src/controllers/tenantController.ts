@@ -169,6 +169,10 @@ export const addFavoriteProperty = async (
 
     res.json(tenant);
   } catch (error: any) {
+    if (error?.code === "P2025") {
+      res.status(404).json({ message: "Tenant or property not found" });
+      return;
+    }
     res.status(500).json({
       message: `Error adding favorite property: ${error.message}`,
     });
@@ -202,6 +206,10 @@ export const removeFavoriteProperty = async (
 
     res.json(tenant);
   } catch (error: any) {
+    if (error?.code === "P2025") {
+      res.status(404).json({ message: "Tenant or property not found" });
+      return;
+    }
     res.status(500).json({
       message: `Error removing favorite property: ${error.message}`,
     });

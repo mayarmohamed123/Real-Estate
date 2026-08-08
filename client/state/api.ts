@@ -131,6 +131,28 @@ export const api = createApi({
         { type: "Manager", id: "LIST" },
       ],
     }),
+    // ── Favorites ─────────────────────────────────────────────────────────────
+    addFavorite: build.mutation<Tenant, { cognitoId: string; propertyId: number }>(
+      {
+        query: ({ cognitoId, propertyId }) => ({
+          url: `/tenants/${cognitoId}/favorites`,
+          method: "POST",
+          body: { propertyId },
+        }),
+        invalidatesTags: ["Tenant", "Properties"],
+      }
+    ),
+
+    removeFavorite: build.mutation<Tenant, { cognitoId: string; propertyId: number }>(
+      {
+        query: ({ cognitoId, propertyId }) => ({
+          url: `/tenants/${cognitoId}/favorites`,
+          method: "DELETE",
+          body: { propertyId },
+        }),
+        invalidatesTags: ["Tenant", "Properties"],
+      }
+    ),
   }),
 });
 
@@ -139,4 +161,6 @@ export const {
   useGetPropertiesQuery,
   useUpdateTenantSettingMutation,
   useUpdateManagerSettingMutation,
+  useAddFavoriteMutation,
+  useRemoveFavoriteMutation,
 } = api;

@@ -82,7 +82,7 @@ export default function MapView() {
       const el = document.createElement("div");
       el.className =
         "cursor-pointer bg-foreground text-background text-xs font-bold px-2.5 py-1.5 rounded-full shadow-lg border border-white/20 hover:scale-110 hover:bg-primary-700 transition-all duration-200 flex items-center gap-1";
-      el.innerText = `£${(property.pricePerMonth / 1000).toFixed(1)}k`;
+      el.innerText = `$${(property.pricePerMonth / 1000).toFixed(1)}k`;
 
       const marker = new mapboxgl.Marker(el)
         .setLngLat([lng, lat])
@@ -90,9 +90,9 @@ export default function MapView() {
           new mapboxgl.Popup({ offset: 25 }).setHTML(`
             <div style="font-family: var(--font-sans); padding: 4px;">
               <strong style="font-size: 14px;">${property.name}</strong>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #666;">£${property.pricePerMonth.toLocaleString()}/mo</p>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #666;">$${property.pricePerMonth.toLocaleString()}/mo</p>
             </div>
-          `)
+          `),
         )
         .addTo(currentMap);
 
@@ -114,13 +114,13 @@ export default function MapView() {
 
         {/* Mock Map Markers for visual excellence matching screenshot aesthetic */}
         <div className="absolute top-1/4 left-1/3 bg-foreground text-background font-bold text-xs px-3 py-1.5 rounded-full shadow-lg border border-white/20 animate-bounce">
-          £4.2M
+          $4.2M
         </div>
         <div className="absolute top-1/2 right-1/4 bg-foreground text-background font-bold text-xs px-3 py-1.5 rounded-full shadow-lg border border-white/20">
-          £12.5M
+          $12.5M
         </div>
         <div className="absolute bottom-1/3 left-1/4 bg-foreground text-background font-bold text-xs px-3 py-1.5 rounded-full shadow-lg border border-white/20">
-          £8.9M
+          $8.9M
         </div>
 
         {/* Center Pill / Notice */}
@@ -132,7 +132,11 @@ export default function MapView() {
             Interactive Map View
           </h4>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Set <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">NEXT_PUBLIC_MAPBOX_TOKEN</code> in your environment file to view live interactive Mapbox maps.
+            Set{" "}
+            <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">
+              NEXT_PUBLIC_MAPBOX_TOKEN
+            </code>{" "}
+            in your environment file to view live interactive Mapbox maps.
           </p>
         </div>
 
@@ -151,7 +155,7 @@ export default function MapView() {
     <div className="relative w-full h-full min-h-100">
       <div ref={mapContainerRef} className="w-full h-full" />
 
-      {/* Floating Bottom Button matching screenshot design */}
+      {/* Floating Bottom Button matching design */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
         <button className="flex items-center gap-2 bg-white/90 backdrop-blur-md border border-border px-5 py-2.5 rounded-full shadow-md text-xs font-semibold text-foreground uppercase tracking-wider hover:bg-white transition-all cursor-pointer">
           <Compass className="size-4 text-primary-600" />

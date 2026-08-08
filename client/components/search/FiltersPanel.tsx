@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/state/redux";
 import { setFilters, toggleFiltersFullOpen } from "@/state/index";
 import { Slider } from "@/components/ui/slider";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { X, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const AMENITIES_LIST = [
   "WiFi",
@@ -69,6 +70,56 @@ export default function FiltersPanel() {
     (state) => state.global
   );
 
+  // Local input state so keystrokes feel instant (no Redux on every keystroke)
+  const [locationInput, setLocationInput] = useState(filters.location);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
+  // Convert an address string → lat/lng via Mapbox Geocoding API
+  const handleLocationSearch = async (value: string) => {
+    const query = value.trim();
+    if (!query) return;
+
+    if (mapboxToken) {
+      setIsGeocoding(true);
+      try {
+        const url =
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/` +
+          `${encodeURIComponent(query)}.json?access_token=${mapboxToken}&limit=1`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+        const feature = data.features?.[0];
+
+        if (feature) {
+          const [lng, lat] = feature.center as [number, number];
+          const placeName: string = feature.place_name ?? query;
+
+          setLocationInput(placeName);
+          dispatch(
+            setFilters({
+              location: placeName,
+              coordinates: { lat, lng },
+            })
+          );
+          toast.success(`Location updated to ${placeName}`);
+          setIsGeocoding(false);
+          return;
+        } else {
+          toast.error(`No results found for "${query}"`);
+        }
+      } catch {
+        toast.error("Geocoding failed. Using text search.");
+      }
+      setIsGeocoding(false);
+    }
+
+    // No token or geocoding failed — just update the location text
+    dispatch(setFilters({ location: query }));
+  };
+
+
   const handleClearAll = () => {
     dispatch(
       setFilters({
@@ -82,6 +133,7 @@ export default function FiltersPanel() {
       })
     );
   };
+
 
   const toggleAmenity = (amenity: string) => {
     const current = filters.amenities;
@@ -127,15 +179,24 @@ export default function FiltersPanel() {
           {/* Location */}
           <Section title="Location">
             <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-primary-400" />
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-primary-400 pointer-events-none" />
               <Input
-                value={filters.location}
-                onChange={(e) =>
-                  dispatch(setFilters({ location: e.target.value }))
-                }
+                value={locationInput}
+                onChange={(e) => setLocationInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleLocationSearch(locationInput);
+                }}
                 placeholder="City, neighbourhood…"
-                className="pl-9 rounded-xl border-border bg-muted/50 focus:bg-white"
+                className="pl-9 pr-20 rounded-xl border-border bg-muted/50 focus:bg-white"
+                disabled={isGeocoding}
               />
+              <button
+                onClick={() => handleLocationSearch(locationInput)}
+                disabled={isGeocoding}
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded-lg text-xs font-semibold bg-primary-800 text-white hover:bg-primary-900 disabled:opacity-50 transition-all cursor-pointer"
+              >
+                {isGeocoding ? "…" : "Search"}
+              </button>
             </div>
           </Section>
 
