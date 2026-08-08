@@ -106,6 +106,11 @@ export const api = createApi({
       providesTags: ["Properties"],
     }),
 
+    getProperty: build.query<Property, number>({
+      query: (id) => ({ url: `/properties/${id}` }),
+      providesTags: ["Properties"],
+    }),
+
     // ── Tenants ───────────────────────────────────────────────────────────────
     updateTenantSetting: build.mutation<Tenant, Partial<Tenant>>({
       query: ({ cognitoId, ...body }) => ({
@@ -159,6 +164,7 @@ export const api = createApi({
 export const {
   useGetAuthUserQuery,
   useGetPropertiesQuery,
+  useGetPropertyQuery,
   useUpdateTenantSettingMutation,
   useUpdateManagerSettingMutation,
   useAddFavoriteMutation,
