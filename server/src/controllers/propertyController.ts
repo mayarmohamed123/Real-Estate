@@ -29,9 +29,16 @@ export const getProperties = async (
       availableFrom,
       latitude,
       longitude,
+      managerCognitoId,
     } = req.query;
 
     let whereConditions: Prisma.Sql[] = [];
+
+    if (managerCognitoId) {
+      whereConditions.push(
+        Prisma.sql`p."managerCognitoId" = ${String(managerCognitoId)}`
+      );
+    }
 
     if (priceMin) {
       whereConditions.push(

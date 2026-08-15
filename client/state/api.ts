@@ -78,7 +78,7 @@ export const api = createApi({
     // ── Properties ────────────────────────────────────────────────────────────
     getProperties: build.query<
       Property[],
-      Partial<FiltersState> & { favoriteIds?: string }
+      Partial<FiltersState> & { favoriteIds?: string; managerCognitoId?: string }
     >({
       query: (filters) => {
         const params: Record<string, string | number | undefined> = {};
@@ -105,6 +105,9 @@ export const api = createApi({
         }
         if (filters.favoriteIds) {
           params.favoriteIds = filters.favoriteIds;
+        }
+        if (filters.managerCognitoId) {
+          params.managerCognitoId = filters.managerCognitoId;
         }
 
         return { url: "/properties", params };
@@ -210,6 +213,36 @@ export const api = createApi({
       }),
       providesTags: ["Applications"],
     }),
+
+    // ── Manager Property CRUD ──────────────────────────────────────────────────
+    createProperty: build.mutation<Property, FormData>({
+      query: (formData) => ({
+        url: "/properties",
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["Properties"],
+    }),
+
+    updateProperty: build.mutation<
+      Property,
+      { id: number; body: Partial<Omit<Property, "id" | "location" | "photoUrls">> }
+    >({
+      query: ({ id, body }) => ({
+        url: `/properties/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Properties"],
+    }),
+
+    deleteProperty: build.mutation<{ message: string }, number>({
+      query: (id) => ({
+        url: `/properties/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Properties"],
+    }),
   }),
 });
 
@@ -225,4 +258,7 @@ export const {
   useGetLeasesQuery,
   useGetLeasePaymentsQuery,
   useGetApplicationsQuery,
+  useCreatePropertyMutation,
+  useUpdatePropertyMutation,
+  useDeletePropertyMutation,
 } = api;
