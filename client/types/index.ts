@@ -64,6 +64,8 @@ export interface Application {
   leaseId?: number;
   property?: Property;
   tenant?: Tenant;
+  lease?: Lease;
+  nextPaymentDate?: string | null;
 }
 
 export interface Lease {

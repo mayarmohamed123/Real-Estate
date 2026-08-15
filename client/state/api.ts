@@ -243,6 +243,19 @@ export const api = createApi({
       }),
       invalidatesTags: ["Properties"],
     }),
+
+    // ── Application Status (manager only) ────────────────────────────────────
+    updateApplicationStatus: build.mutation<
+      Application,
+      { id: number; status: "Pending" | "Approved" | "Denied" }
+    >({
+      query: ({ id, status }) => ({
+        url: `/applications/${id}/status`,
+        method: "PUT",
+        body: { status },
+      }),
+      invalidatesTags: ["Applications", "Leases"],
+    }),
   }),
 });
 
@@ -261,4 +274,5 @@ export const {
   useCreatePropertyMutation,
   useUpdatePropertyMutation,
   useDeletePropertyMutation,
+  useUpdateApplicationStatusMutation,
 } = api;
