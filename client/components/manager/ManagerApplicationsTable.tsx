@@ -5,7 +5,8 @@ import Image from "next/image";
 import { Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Application } from "@/types";
 import { useUpdateApplicationStatusMutation } from "@/state/api";
-import { cn, withToast } from "@/lib/utils";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Props {
   applications: Application[];
@@ -48,23 +49,23 @@ function ApplicationRow({ application }: { application: Application }) {
     ? `${property.location.address}, ${property.location.city}`
     : null;
 
-  const handleApprove = () =>
-    withToast(
-      updateStatus({ id: application.id, status: "Approved" }).unwrap(),
-      {
-        success: "Application approved — lease created!",
-        error: "Failed to approve application.",
-      }
-    );
+  const handleApprove = async () => {
+    try {
+      await updateStatus({ id: application.id, status: "Approved" }).unwrap();
+      toast.success("Application approved — lease created!");
+    } catch {
+      toast.error("Failed to approve application.");
+    }
+  };
 
-  const handleDeny = () =>
-    withToast(
-      updateStatus({ id: application.id, status: "Denied" }).unwrap(),
-      {
-        success: "Application denied.",
-        error: "Failed to deny application.",
-      }
-    );
+  const handleDeny = async () => {
+    try {
+      await updateStatus({ id: application.id, status: "Denied" }).unwrap();
+      toast.success("Application denied.");
+    } catch {
+      toast.error("Failed to deny application.");
+    }
+  };
 
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 py-5 px-6 border-t border-border hover:bg-muted/20 transition-colors group">

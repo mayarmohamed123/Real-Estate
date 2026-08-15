@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   property: Property;
-  onEdit: (property: Property) => void;
-  onDelete: (property: Property) => void;
+  onEdit?: (property: Property) => void;
+  onDelete?: (property: Property) => void;
 }
 
 function formatPrice(price: number) {
@@ -52,30 +52,36 @@ export default function ManagerPropertyCard({ property, onEdit, onDelete }: Prop
           </span>
         </div>
 
-        {/* Overlay actions on hover */}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-          <Link
-            href={`/properties/${property.id}`}
-            className="p-2.5 rounded-xl bg-white/90 hover:bg-white text-foreground transition-colors"
-            aria-label="View property"
-          >
-            <Eye className="size-4" />
-          </Link>
-          <button
-            onClick={() => onEdit(property)}
-            className="p-2.5 rounded-xl bg-white/90 hover:bg-white text-foreground transition-colors cursor-pointer"
-            aria-label="Edit property"
-          >
-            <Pencil className="size-4" />
-          </button>
-          <button
-            onClick={() => onDelete(property)}
-            className="p-2.5 rounded-xl bg-white/90 hover:bg-red-50 text-red-600 transition-colors cursor-pointer"
-            aria-label="Delete property"
-          >
-            <Trash2 className="size-4" />
-          </button>
-        </div>
+        {/* Overlay actions on hover — only shown when handlers are provided */}
+        {(onEdit ?? onDelete) && (
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+            <Link
+              href={`/properties/${property.id}`}
+              className="p-2.5 rounded-xl bg-white/90 hover:bg-white text-foreground transition-colors"
+              aria-label="View property"
+            >
+              <Eye className="size-4" />
+            </Link>
+            {onEdit && (
+              <button
+                onClick={() => onEdit(property)}
+                className="p-2.5 rounded-xl bg-white/90 hover:bg-white text-foreground transition-colors cursor-pointer"
+                aria-label="Edit property"
+              >
+                <Pencil className="size-4" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => onDelete(property)}
+                className="p-2.5 rounded-xl bg-white/90 hover:bg-red-50 text-red-600 transition-colors cursor-pointer"
+                aria-label="Delete property"
+              >
+                <Trash2 className="size-4" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Content */}

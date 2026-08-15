@@ -3,19 +3,11 @@
 import React from "react";
 import Link from "next/link";
 import { ArrowRight, Building2, Users, Clock, DollarSign } from "lucide-react";
-import {
-  useGetAuthUserQuery,
-  useGetPropertiesQuery,
-  useGetApplicationsQuery,
-} from "@/state/api";
-import { Manager } from "@/types";
+import { useGetPropertiesQuery, useGetApplicationsQuery } from "@/state/api";
+import { useAuthUser } from "@/hooks/useAuthUser";
 import { Skeleton } from "@/components/ui/skeleton";
 import ManagerApplicationsTable from "@/components/manager/ManagerApplicationsTable";
 import ManagerPropertyCard from "@/components/manager/ManagerPropertyCard";
-import PropertyModal from "@/components/manager/PropertyModal";
-import DeletePropertyDialog from "@/components/manager/DeletePropertyDialog";
-import { useState } from "react";
-import { Property } from "@/types";
 
 // ── Section Header ──────────────────────────────────────────────────────────
 function SectionHeader({
@@ -73,9 +65,7 @@ function StatCard({
         <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
           {label}
         </p>
-        <p className="font-heading text-xl font-bold text-foreground">
-          {value}
-        </p>
+        <p className="font-heading text-xl font-bold text-foreground">{value}</p>
       </div>
     </div>
   );
@@ -106,14 +96,13 @@ function DashboardSkeleton() {
 
 // ── Main Page ────────────────────────────────────────────────────────────────
 export default function ManagerDashboardPage() {
-  const { data: authUser, isLoading: isAuthLoading } = useGetAuthUserQuery();
-  const manager = authUser?.userInfo as Manager | undefined;
-  const cognitoId = authUser?.cognitoInfo?.userId;
+  // Centralised auth hook — no more duplicated extraction logic
+  const { isLoading: isAuthLoading, cognitoId, manager } = useAuthUser();
   const firstName = manager?.name?.split(" ")[0] ?? "there";
 
   const { data: properties = [], isLoading: isPropsLoading } =
     useGetPropertiesQuery(
-      { managerCognitoId: cognitoId },
+      { managerCognitoId: cognitoId ?? undefined },
       { skip: !cognitoId }
     );
 
@@ -123,26 +112,14 @@ export default function ManagerDashboardPage() {
       { skip: !cognitoId }
     );
 
-  // Modal / delete state (for property cards)
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [propertyToEdit, setPropertyToEdit] = useState<Property | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [propertyToDelete, setPropertyToDelete] = useState<Property | null>(
-    null
-  );
-
   const isLoading =
     isAuthLoading || (!!cognitoId && (isPropsLoading || isAppsLoading));
 
   if (isLoading) return <DashboardSkeleton />;
 
   // Derived stats
-  const pendingApplications = applications.filter(
-    (a) => a.status === "Pending"
-  );
-  const activeTenants = applications.filter(
-    (a) => a.status === "Approved"
-  ).length;
+  const pendingApplications = applications.filter((a) => a.status === "Pending");
+  const activeTenants = applications.filter((a) => a.status === "Approved").length;
   const monthlyRevenue = applications
     .filter((a) => a.status === "Approved")
     .reduce((sum, a) => sum + (a.property?.pricePerMonth ?? 0), 0);
@@ -208,7 +185,7 @@ export default function ManagerDashboardPage() {
         </section>
       )}
 
-      {/* ── Portfolio Preview ────────────────────────────────────────── */}
+      {/* ── Portfolio Preview (read-only — manage on Properties page) ── */}
       {recentProperties.length > 0 && (
         <section>
           <SectionHeader
@@ -218,18 +195,9 @@ export default function ManagerDashboardPage() {
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {recentProperties.map((property) => (
-              <ManagerPropertyCard
-                key={property.id}
-                property={property}
-                onEdit={(p) => {
-                  setPropertyToEdit(p);
-                  setIsModalOpen(true);
-                }}
-                onDelete={(p) => {
-                  setPropertyToDelete(p);
-                  setIsDeleteDialogOpen(true);
-                }}
-              />
+              // No onEdit / onDelete — dashboard is overview-only.
+              // Full management (edit, delete, add) is on the Properties page.
+              <ManagerPropertyCard key={property.id} property={property} />
             ))}
           </div>
         </section>
@@ -254,18 +222,6 @@ export default function ManagerDashboardPage() {
           </Link>
         </div>
       )}
-
-      {/* Modals */}
-      <PropertyModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        propertyToEdit={propertyToEdit}
-      />
-      <DeletePropertyDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        property={propertyToDelete}
-      />
     </div>
   );
 }

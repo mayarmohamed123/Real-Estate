@@ -1,30 +1,43 @@
 import type { Request, Response } from "express";
 import prisma from "../prisma.js";
+import { z } from "zod";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Shared Error Handler ──────────────────────────────────────────────────────
+function serverError(res: Response, error: unknown, context: string): void {
+  console.error(`[${context}]`, error);
+  res.status(500).json({ message: "An unexpected error occurred. Please try again." });
+}
 
-/**
- * Given a lease, return the next payment due date.
- * Logic: find the latest paid payment date on that lease;
- * if none exists, the next due is one month after the lease start date.
- * Always clamps to the lease end date.
- */
-const calculateNextPaymentDate = (
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function calculateNextPaymentDate(
   lease: { startDate: Date; endDate: Date },
   lastPaymentDate: Date | null
-): Date | null => {
+): Date | null {
+  const now = new Date();
+  if (now > lease.endDate) return null;
+
   const base = lastPaymentDate ?? lease.startDate;
   const next = new Date(base);
   next.setMonth(next.getMonth() + 1);
-  if (next > lease.endDate) return null; // lease is over / fully paid
-  return next;
-};
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GET /applications
-// ─────────────────────────────────────────────────────────────────────────────
+  return next > lease.endDate ? null : next;
+}
+
+// ── Validation schemas ────────────────────────────────────────────────────────
+const createApplicationSchema = z.object({
+  propertyId: z.coerce.number().int().positive("Property ID must be a positive integer"),
+  tenantCognitoId: z.string().min(1, "Tenant ID is required"),
+  name: z.string().min(1, "Name is required").max(200),
+  email: z.string().email("Invalid email address"),
+  phoneNumber: z.string().min(1, "Phone number is required").max(50),
+  message: z.string().max(2000).optional(),
+});
+
+const updateStatusSchema = z.object({
+  status: z.enum(["Pending", "Approved", "Denied"]),
+});
+
+// ── GET /applications ─────────────────────────────────────────────────────────
 export const listApplications = async (
   req: Request,
   res: Response
@@ -32,19 +45,20 @@ export const listApplications = async (
   try {
     const { userId, userType } = req.query;
 
-    const where =
+    if (!userId || !userType) {
+      res.status(400).json({ message: "userId and userType are required" });
+      return;
+    }
+
+    const whereClause =
       userType === "tenant"
         ? { tenantCognitoId: String(userId) }
-        : userType === "manager"
-          ? { property: { managerCognitoId: String(userId) } }
-          : {};
+        : { property: { managerCognitoId: String(userId) } };
 
     const applications = await prisma.application.findMany({
-      where,
+      where: whereClause,
       include: {
-        property: {
-          include: { location: true },
-        },
+        property: { include: { location: true } },
         tenant: true,
         lease: {
           include: { payments: { orderBy: { paymentDate: "desc" }, take: 1 } },
@@ -55,7 +69,6 @@ export const listApplications = async (
 
     const enriched = applications.map((app) => {
       let nextPaymentDate: Date | null = null;
-
       if (app.lease) {
         const lastPayment = app.lease.payments[0] ?? null;
         nextPaymentDate = calculateNextPaymentDate(
@@ -63,31 +76,22 @@ export const listApplications = async (
           lastPayment?.paymentDate ?? null
         );
       }
-
-      return {
-        ...app,
-        nextPaymentDate,
-      };
+      return { ...app, nextPaymentDate };
     });
 
     res.json(enriched);
-  } catch (error: any) {
-    res.status(500).json({
-      message: `Error listing applications: ${error.message}`,
-    });
+  } catch (error) {
+    serverError(res, error, "listApplications");
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GET /applications/:id
-// ─────────────────────────────────────────────────────────────────────────────
+// ── GET /applications/:id ─────────────────────────────────────────────────────
 export const getApplication = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
     const id = Number(req.params.id);
-
     if (isNaN(id)) {
       res.status(400).json({ message: "Application ID must be a number" });
       return;
@@ -119,35 +123,34 @@ export const getApplication = async (
     }
 
     res.json({ ...application, nextPaymentDate });
-  } catch (error: any) {
-    res.status(500).json({
-      message: `Error retrieving application: ${error.message}`,
-    });
+  } catch (error) {
+    serverError(res, error, "getApplication");
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /applications
-// ─────────────────────────────────────────────────────────────────────────────
+// ── POST /applications ────────────────────────────────────────────────────────
 export const createApplication = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const {
-      propertyId,
-      tenantCognitoId,
-      name,
-      email,
-      phoneNumber,
-      message,
-    } = req.body;
+    const parsed = createApplicationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        message: "Validation error",
+        errors: parsed.error.flatten().fieldErrors,
+      });
+      return;
+    }
+
+    const { propertyId, tenantCognitoId, name, email, phoneNumber, message } =
+      parsed.data;
 
     const application = await prisma.application.create({
       data: {
         applicationDate: new Date(),
         status: "Pending",
-        propertyId: Number(propertyId),
+        propertyId,
         tenantCognitoId,
         name,
         email,
@@ -161,34 +164,34 @@ export const createApplication = async (
     });
 
     res.status(201).json(application);
-  } catch (error: any) {
-    res.status(500).json({
-      message: `Error creating application: ${error.message}`,
-    });
+  } catch (error) {
+    serverError(res, error, "createApplication");
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PUT /applications/:id/status
-// Update status; if Approved, create a Lease automatically
-// ─────────────────────────────────────────────────────────────────────────────
+// ── PUT /applications/:id/status ──────────────────────────────────────────────
+// Only the manager who owns the property may approve/deny an application.
 export const updateApplicationStatus = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
     const id = Number(req.params.id);
-    const { status } = req.body;
-
     if (isNaN(id)) {
       res.status(400).json({ message: "Application ID must be a number" });
       return;
     }
 
-    if (!["Pending", "Approved", "Denied"].includes(status)) {
-      res.status(400).json({ message: "Invalid status value" });
+    const parsed = updateStatusSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        message: "Validation error",
+        errors: parsed.error.flatten().fieldErrors,
+      });
       return;
     }
+
+    const { status } = parsed.data;
 
     const application = await prisma.application.findUnique({
       where: { id },
@@ -200,12 +203,18 @@ export const updateApplicationStatus = async (
       return;
     }
 
-    // If being approved and no lease exists yet, auto-create one
+    // Authorization — only the manager who owns the property can update status
+    if (application.property.managerCognitoId !== req.user?.id) {
+      res.status(403).json({ message: "Forbidden: you do not manage this property" });
+      return;
+    }
+
+    // If being approved and no lease exists yet, auto-create one (1-year default)
     let leaseId = application.leaseId;
     if (status === "Approved" && !application.lease) {
       const startDate = new Date();
       const endDate = new Date(startDate);
-      endDate.setFullYear(endDate.getFullYear() + 1); // default 1-year lease
+      endDate.setFullYear(endDate.getFullYear() + 1);
 
       const lease = await prisma.lease.create({
         data: {
@@ -223,9 +232,7 @@ export const updateApplicationStatus = async (
       // Link tenant to property
       await prisma.tenant.update({
         where: { cognitoId: application.tenantCognitoId },
-        data: {
-          properties: { connect: { id: application.propertyId } },
-        },
+        data: { properties: { connect: { id: application.propertyId } } },
       });
     }
 
@@ -243,38 +250,31 @@ export const updateApplicationStatus = async (
     });
 
     res.json(updated);
-  } catch (error: any) {
-    res.status(500).json({
-      message: `Error updating application status: ${error.message}`,
-    });
+  } catch (error) {
+    serverError(res, error, "updateApplicationStatus");
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DELETE /applications/:id
-// ─────────────────────────────────────────────────────────────────────────────
+// ── DELETE /applications/:id ──────────────────────────────────────────────────
 export const deleteApplication = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
     const id = Number(req.params.id);
-
     if (isNaN(id)) {
       res.status(400).json({ message: "Application ID must be a number" });
       return;
     }
 
     await prisma.application.delete({ where: { id } });
-
     res.json({ message: "Application deleted successfully" });
-  } catch (error: any) {
-    if (error?.code === "P2025") {
+  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((error as any)?.code === "P2025") {
       res.status(404).json({ message: "Application not found" });
       return;
     }
-    res.status(500).json({
-      message: `Error deleting application: ${error.message}`,
-    });
+    serverError(res, error, "deleteApplication");
   }
 };

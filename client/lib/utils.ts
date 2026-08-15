@@ -37,13 +37,13 @@ export function cleanParams(params: Record<string, any>): Record<string, any> {
 
 type MutationMessages = {
   success?: string;
-  error: string;
+  error?: string;
 };
 
 export const withToast = async <T>(
   mutationFn: Promise<T>,
-  messages: Partial<MutationMessages>
-) => {
+  messages: MutationMessages = {}
+): Promise<T | undefined> => {
   const { success, error } = messages;
 
   try {
@@ -51,10 +51,13 @@ export const withToast = async <T>(
     if (success) toast.success(success);
     return result;
   } catch (err) {
+    console.error(err);
     if (error) toast.error(error);
-    throw err;
+    // Do NOT re-throw — callers do not need to handle the error separately.
+    return undefined;
   }
 };
+
 
 export const createNewUserInDatabase = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
