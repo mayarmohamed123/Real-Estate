@@ -5,9 +5,10 @@
   "description": "Backend API for Real Estate Platform",
   "main": "index.js",
   "scripts": {
-    "build": "rimraf dist && npx tsc",
+    "postinstall": "prisma generate",
+    "build": "prisma generate && rimraf dist && npx tsc",
     "start": "npm run build && node dist/index.js",
-    "dev": "concurrently \"npx tsc -w\" \"nodemon --watch dist --exec node dist/index.js\"",
+    "dev": "prisma generate && concurrently \"npx tsc -w\" \"nodemon --watch dist --exec node dist/index.js\"",
     "seed": "tsx prisma/seed.ts",
     "prisma:generate": "prisma generate",
     "postprisma:generate": "shx mkdir -p ../client/types/prisma && shx cp node_modules/.prisma/client/index.d.ts ../client/types/prisma/index.d.ts"
