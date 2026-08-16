@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { Amenity, Highlight, Prisma } from "@prisma/client";
+import { Amenity, Highlight, Prisma } from "../generated/prisma/client.js";
 import { wktToGeoJSON } from "@terraformer/wkt";
 import prisma from "../prisma.js";
 import { Upload } from "@aws-sdk/lib-storage";

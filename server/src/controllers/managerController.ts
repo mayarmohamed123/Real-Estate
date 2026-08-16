@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../generated/prisma/client.js";
 import { wktToGeoJSON } from "@terraformer/wkt";
 import prisma from "../prisma.js";
 
