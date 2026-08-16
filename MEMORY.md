@@ -29,7 +29,7 @@
 
 ## Server API Endpoints
 
-Base URL: `http://localhost:3000` (dev) / `NEXT_PUBLIC_API_BASE_URL`
+Base URL: `http://localhost:8000` (dev) / `NEXT_PUBLIC_API_BASE_URL`
 
 ### Properties
 | Method | Route | Description |

@@ -10,13 +10,13 @@ import { fetchAuthSession } from "aws-amplify/auth";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000",
+    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000",
     prepareHeaders: async (headers) => {
       try {
         const session = await fetchAuthSession();
         const { idToken } = session.tokens ?? {};
         if (idToken) {
-          headers.set("Authorization", `Bearer ${idToken}`);
+          headers.set("Authorization", `Bearer ${idToken.toString()}`);
         }
       } catch {
         // unauthenticated — skip auth header

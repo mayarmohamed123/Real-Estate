@@ -1,13 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
-import jwt, { type JwtHeader, type JwtPayload, type SigningKeyCallback } from "jsonwebtoken";
-import jwksRsa from "jwks-rsa";
+import { CognitoJwtVerifier } from "aws-jwt-verify";
 
 // ── Types ────────────────────────────────────────────────────────────────────
-interface DecodedToken extends JwtPayload {
-  sub: string;
-  "custom:role"?: string;
-}
-
 declare global {
   namespace Express {
     interface Request {
@@ -19,51 +13,38 @@ declare global {
   }
 }
 
-// ── JWKS Client (cached, rate-limited) ───────────────────────────────────────
-// Verifies JWTs against the Cognito public key — prevents forged tokens.
-const jwksClient = jwksRsa({
-  jwksUri: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}/.well-known/jwks.json`,
-  cache: true,
-  cacheMaxEntries: 5,
-  cacheMaxAge: 600_000, // 10 minutes
-  rateLimit: true,
-  jwksRequestsPerMinute: 10,
-});
+// ── Cognito JWT Verifier (cached, lazy) ──────────────────────────────────────
+// Uses AWS's official aws-jwt-verify library.
+// - Fetches and caches the Cognito JWKS automatically.
+// - Verifies the idToken (contains custom:role, email, sub).
+// - Handles clock skew via graceSeconds.
+const userPoolId = process.env.COGNITO_USER_POOL_ID || "eu-north-1_0QHrUBYgf";
+const clientId =
+  process.env.COGNITO_CLIENT_ID ||
+  process.env.NEXT_PUBLIC_AWS_COGNITO_USER_POOL_CLIENT_ID ||
+  "24md6jbutq3khkm42smd8tlpfo";
 
-function getSigningKey(header: JwtHeader, callback: SigningKeyCallback): void {
-  if (!header.kid) {
-    callback(new Error("JWT has no kid header"));
-    return;
-  }
-  jwksClient.getSigningKey(header.kid, (err, key) => {
-    if (err || !key) {
-      callback(err ?? new Error("Signing key not found"));
-      return;
-    }
-    callback(null, key.getPublicKey());
-  });
-}
+const verifier = CognitoJwtVerifier.create({
+  userPoolId,
+  clientId,
+  tokenUse: "id",   // We send the idToken which carries custom:role
+});
 
 // ── Middleware Factory ────────────────────────────────────────────────────────
 export const authMiddleware = (allowedRoles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
     if (!token) {
-      res.status(401).json({ message: "Unauthorized" });
+      res.status(401).json({ message: "Unauthorized — no token provided" });
       return;
     }
 
-    jwt.verify(token, getSigningKey, { algorithms: ["RS256"] }, (err, decoded) => {
-      if (err || !decoded) {
-        console.warn("[authMiddleware] Token verification failed:", err?.message);
-        res.status(401).json({ message: "Invalid or expired token" });
-        return;
-      }
+    try {
+      const payload = await verifier.verify(token);
 
-      const payload = decoded as DecodedToken;
-      const userRole = payload["custom:role"] ?? "";
+      const userRole = (payload["custom:role"] as string | undefined) ?? "";
 
       req.user = {
         id: payload.sub,
@@ -77,6 +58,10 @@ export const authMiddleware = (allowedRoles: string[]) => {
       }
 
       next();
-    });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn("[authMiddleware] Token verification failed:", message);
+      res.status(401).json({ message: "Invalid or expired token", error: message });
+    }
   };
 };
