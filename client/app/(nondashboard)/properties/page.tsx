@@ -1,13 +1,12 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React from "react";
 import dynamic from "next/dynamic";
 import FiltersBar from "@/components/search/FiltersBar";
 import FiltersPanel from "@/components/search/FiltersPanel";
 import PropertyListings from "@/components/search/PropertyListings";
 import { useAppSelector } from "@/state/redux";
 import { useGetPropertiesQuery } from "@/state/api";
-import { useFilterUrlSync } from "@/hooks/useFilterUrlSync";
 
 // Dynamically import MapView to disable SSR for Mapbox
 const MapView = dynamic(() => import("@/components/search/MapView"), {
@@ -19,9 +18,7 @@ const MapView = dynamic(() => import("@/components/search/MapView"), {
   ),
 });
 
-function PropertiesSearchContent() {
-  useFilterUrlSync();
-
+export default function PropertiesSearchPage() {
   const { filters } = useAppSelector((state) => state.global);
   const { data: properties } = useGetPropertiesQuery(filters);
 
@@ -60,19 +57,5 @@ function PropertiesSearchContent() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function PropertiesSearchPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground text-sm">
-          Loading properties…
-        </div>
-      }
-    >
-      <PropertiesSearchContent />
-    </Suspense>
   );
 }
