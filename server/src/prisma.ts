@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaClient } from "./generated/prisma/client.js";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
@@ -12,7 +13,10 @@ if (!connectionString) {
   );
 }
 
-const adapter = new PrismaPg({ connectionString });
+// PrismaPg requires a pg.Pool instance — NOT a plain config object
+const pool = new Pool({ connectionString });
+
+const adapter = new PrismaPg(pool);
 
 export const prisma =
   globalForPrisma.prisma ||
@@ -23,5 +27,3 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export default prisma;
-
-
