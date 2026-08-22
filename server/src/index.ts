@@ -60,6 +60,20 @@ app.get("/", (_req, res) => {
   res.send("Real Estate Platform API — v1");
 });
 
+app.get("/health", (_req, res) => {
+  res.json({
+    status: "ok",
+    env: {
+      DATABASE_URL: process.env.DATABASE_URL ? "✅ set" : "❌ missing",
+      COGNITO_USER_POOL_ID: process.env.COGNITO_USER_POOL_ID ? "✅ set" : "❌ missing",
+      COGNITO_CLIENT_ID: process.env.COGNITO_CLIENT_ID ? "✅ set" : "❌ missing",
+      AWS_REGION: process.env.AWS_REGION ? "✅ set" : "❌ missing",
+      ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || "(using defaults)",
+      NODE_ENV: process.env.NODE_ENV || "undefined",
+    },
+  });
+});
+
 app.use("/tenants", authMiddleware(["tenant"]), tenantRoutes);
 app.use("/managers", authMiddleware(["manager"]), managerRoutes);
 app.use("/properties", propertyRoutes);
