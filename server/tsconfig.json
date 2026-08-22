@@ -8,7 +8,7 @@
     // Environment Settings
     "module": "nodenext",
     "target": "esnext",
-    "typeRoots": ["./node_modules/@types"],
+    "typeRoots": ["./node_modules/@types", "./src/types"],
 
     // Other Outputs
     "sourceMap": true,
