@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { Amenity, Highlight, Prisma } from "../generated/prisma/client.js";
+// @ts-ignore - no official @types package available for @terraformer/wkt
 import { wktToGeoJSON } from "@terraformer/wkt";
 import prisma from "../prisma.js";
 import { Upload } from "@aws-sdk/lib-storage";
