@@ -10,7 +10,7 @@ import { fetchAuthSession } from "aws-amplify/auth";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000",
+    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "https://real-estate-three-brown-31.vercel.app",
     prepareHeaders: async (headers) => {
       try {
         const session = await fetchAuthSession();

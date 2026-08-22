@@ -17,7 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
-  : ["http://localhost:3001"];
+  : ["http://localhost:3000", "http://localhost:3001", "https://real-estate-8g48.vercel.app"];
 
 app.use(
   cors({
